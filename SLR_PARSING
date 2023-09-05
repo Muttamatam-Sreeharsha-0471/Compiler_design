@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-// Grammar rules
 const char *productions[] = {
     "S -> E",
     "E -> E + T",
@@ -12,9 +11,7 @@ const char *productions[] = {
     "F -> ( E )",
     "F -> id"
 };
-
-// Parsing table (corrected)
-char parsingTable[7][5][20] = {
+char parsingTable[7][5][3] = {
     { "", "", "", "", "" },
     { "s1", "", "", "", "" },
     { "", "s2", "", "", "" },
@@ -23,52 +20,41 @@ char parsingTable[7][5][20] = {
     { "s6", "", "", "", "" },
     { "", "r7", "r7", "r7", "r7" },
 };
-
 bool slrParser(const char *input) {
-    char stack[1000];
-    int top = 0;
+    char stack[1000] = "0";
+    int top = 1;
     int state = 0;
-
-    stack[top] = '0';
-
     int index = 0;
     char symbol = input[index];
-
     while (true) {
-        char action[20];
+        char action[3];
         strcpy(action, parsingTable[state][symbol - '0']);
 
-        if (action[0] == '\0') {
-            printf("Parsing error!\n");
-            return false;
-        }
-
         if (action[0] == 's') {
-            stack[++top] = symbol;
-            stack[++top] = action[1];
+            stack[top++] = symbol;
+            stack[top++] = action[1];
             state = action[1] - '0';
             symbol = input[++index];
         } else if (action[0] == 'r') {
             int production = action[1] - '0';
-            int len = strlen(productions[production]);
-            int popCount = len - 4;
+            int popCount = strlen(productions[production]) - 4;
 
             while (popCount--) {
                 top -= 2;
             }
-
-            int newState = stack[top] - '0';
-            stack[++top] = productions[production][0];
-            stack[++top] = parsingTable[newState][stack[top-1]-'0'][0];
-
+            int newState = stack[top - 1] - '0';
+            stack[top++] = productions[production][0];
+            stack[top++] = parsingTable[newState][stack[top - 2] - '0'][0];
             state = newState;
         } else if (action[0] == 'a') {
             printf("Parsing successful!\n");
             return true;
+        } else {
+            printf("Parsing error!\n");
+            return false;
         }
     }
 }
-
 int main() {
     const char *input = "id+id*id";
     printf("Input: %s\n", input);
